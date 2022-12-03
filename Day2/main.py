@@ -90,11 +90,9 @@ dataPath = Path(__file__).with_name("Data.txt")
 with open(dataPath) as dataFile:
     strategyLines = [getStrategyFromLine(line) for line in dataFile]
     incompleteScore = 0
-    for strategy in strategyLines:
-        incompleteScore += getIncompleteStrategyValue(strategy)
-    print(f"Incomplete score: {incompleteScore}")
-
     elfScore = 0
     for strategy in strategyLines:
+        incompleteScore += getIncompleteStrategyValue(strategy)
         elfScore += getElfStrategyValue(strategy)
+    print(f"Incomplete score: {incompleteScore}")
     print(f"Elf score: {elfScore}")
