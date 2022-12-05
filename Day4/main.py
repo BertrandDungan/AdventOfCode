@@ -17,9 +17,7 @@ def isFullyOverlapping(assignments: List[int]) -> bool:
     if (
         assignmentOneStart >= assignmentTwoStart
         and assignmentOneEnd <= assignmentTwoEnd
-    ):
-        return True
-    if (
+    ) or (
         assignmentTwoStart >= assignmentOneStart
         and assignmentTwoEnd <= assignmentOneEnd
     ):
@@ -33,18 +31,23 @@ def isOverlapping(assignments: List[int]) -> bool:
     assignmentTwoStart = assignments[2]
     assignmentTwoEnd = assignments[3]
     if (
-        assignmentOneStart >= assignmentTwoStart
-        and assignmentOneStart <= assignmentTwoEnd
+        (
+            assignmentOneStart >= assignmentTwoStart
+            and assignmentOneStart <= assignmentTwoEnd
+        )
+        or (
+            assignmentOneEnd <= assignmentTwoEnd
+            and assignmentOneEnd >= assignmentTwoStart
+        )
+        or (
+            assignmentTwoStart >= assignmentOneStart
+            and assignmentTwoStart <= assignmentOneEnd
+        )
+        or (
+            assignmentTwoEnd <= assignmentOneEnd
+            and assignmentTwoEnd >= assignmentOneStart
+        )
     ):
-        return True
-    if assignmentOneEnd <= assignmentTwoEnd and assignmentOneEnd >= assignmentTwoStart:
-        return True
-    if (
-        assignmentTwoStart >= assignmentOneStart
-        and assignmentTwoStart <= assignmentOneEnd
-    ):
-        return True
-    if assignmentTwoEnd <= assignmentOneEnd and assignmentTwoEnd >= assignmentOneStart:
         return True
     return False
 
