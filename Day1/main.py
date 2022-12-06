@@ -1,6 +1,6 @@
+from functools import reduce
 from io import TextIOWrapper
 from pathlib import Path
-from functools import reduce
 from typing import Iterable
 
 

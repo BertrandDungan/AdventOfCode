@@ -1,8 +1,8 @@
-from pathlib import Path
-from typing import List, TypeVar, Tuple, Iterable
-from itertools import chain, islice
 from functools import reduce
+from itertools import chain, islice
 from operator import add
+from pathlib import Path
+from typing import Iterable, List, Tuple, TypeVar
 
 T = TypeVar("T")
 

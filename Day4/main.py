@@ -1,6 +1,6 @@
+from pathlib import Path
 from re import findall
 from typing import List
-from pathlib import Path
 
 
 def getAssignments(line: str) -> List[int]:
