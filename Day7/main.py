@@ -12,8 +12,8 @@ class File(object):
         self.size = size
         self.itemIndex = itemIndex
 
-    def getSize(self) -> tuple[int, int, int]:
-        return (self.size, 0, 0)
+    def getSize(self) -> tuple[int, int]:
+        return (self.size, 0)
 
 
 class Directory(object):
@@ -41,25 +41,19 @@ class Directory(object):
         assert directoryName is not None
         self.addItem(Directory(directoryName[1], self, [], len(self.children)))
 
-    def getSize(self) -> tuple[int, int, int]:
+    def getSize(self) -> tuple[int, int]:
         if self.children is None:
-            return (0, 0, 0)
+            return (0, 0)
         selfSizeAcc = 0
         directoryAcc = 0
-        directoryCount = 0
         for item in self.children:
             itemSize = item.getSize()
             selfSizeAcc += itemSize[0]
             directoryAcc += itemSize[1]
-            directoryCount += itemSize[2]
-            if isinstance(item, Directory) and itemSize[0] <= MAX_SIZE:
-                directoryCount += 1
-        if selfSizeAcc > MAX_SIZE:
-            selfSizeAcc = 0
-        else:
+        if selfSizeAcc <= MAX_SIZE:
             directoryAcc += selfSizeAcc
 
-        return (selfSizeAcc, directoryAcc, directoryCount)
+        return (selfSizeAcc, directoryAcc)
 
     def goUpLevel(self) -> Directory:
         assert self.parent is not None
@@ -127,13 +121,13 @@ def returnDirectoryToRoot(activeDirectory: Directory) -> Directory:
     return rootDirectory
 
 
-dataPath = Path(__file__).with_name("Test2.txt")
+dataPath = Path(__file__).with_name("Data.txt")
 with open(dataPath) as dataFile:
     activeDirectory = Directory("/")
     for line in dataFile:
         activeDirectory = performTerminalAction(line, activeDirectory)
     activeDirectory = returnDirectoryToRoot(activeDirectory)
     size = activeDirectory.getSize()
-    print(f"Total size of directories smaller than {MAX_SIZE + 1} " + f"is {size}")
+    print(f"Total size of directories smaller than {MAX_SIZE + 1} " + f"is {size[1]}")
     print(f"This is {size[1] - 1182909} too big")
     print(size)
