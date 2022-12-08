@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from re import findall, search
 
+MAX_SIZE = 100000
+
 
 class File(object):
     def __init__(self, name: str, size: int, itemIndex: int = 0) -> None:
@@ -45,9 +47,9 @@ class Directory(object):
         sizeAcc = 0
         for item in self.children:
             itemSize = item.getSize()
-            if itemSize <= 100000:
+            if itemSize <= MAX_SIZE:
                 sizeAcc += itemSize
-                if isinstance(item, Directory) and sizeAcc + itemSize <= 100000:
+                if isinstance(item, Directory) and sizeAcc + itemSize <= MAX_SIZE:
                     sizeAcc += itemSize
         return sizeAcc
 
