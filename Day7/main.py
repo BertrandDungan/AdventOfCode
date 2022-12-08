@@ -130,6 +130,6 @@ with open(dataPath) as dataFile:
         activeDirectory = performTerminalAction(line, activeDirectory)
     activeDirectory = returnDirectoryToRoot(activeDirectory)
     print(
-        f"Total size of directories smaller than {MAX_SIZE + 1}"
-        + f"is {activeDirectory.getSize()[0]}"
+        f"Total size of directories smaller than {MAX_SIZE + 1} "
+        + f"is {activeDirectory.getSize()[1]}"
     )
