@@ -129,5 +129,3 @@ with open(dataPath) as dataFile:
     activeDirectory = returnDirectoryToRoot(activeDirectory)
     size = activeDirectory.getSize()
     print(f"Total size of directories smaller than {MAX_SIZE + 1} " + f"is {size[1]}")
-    print(f"This is {size[1] - 1182909} too big")
-    print(size)
