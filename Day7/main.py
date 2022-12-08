@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 from re import Match, findall, search
+from typing import Optional
 
-MAX_SIZE = 100000
+STEP_ONE_SEARCH_SIZE = 100000
+TOTAL_DISK_SPACE = 70_000_000
+UPDATE_SIZE = 3_000_0000
 
 
 class File(object):
@@ -12,7 +15,7 @@ class File(object):
         self.size = size
         self.itemIndex = itemIndex
 
-    def getSize(self) -> tuple[int, int]:
+    def getSize(self, _: int) -> tuple[int, int]:
         return (self.size, 0)
 
 
@@ -20,7 +23,7 @@ class Directory(object):
     def __init__(
         self,
         name: str,
-        parent: None | Directory = None,
+        parent: Optional[Directory] = None,
         children: list[File | Directory] = [],
         itemIndex: int = 0,
     ) -> None:
@@ -32,25 +35,27 @@ class Directory(object):
     def addItem(self, item: File | Directory) -> None:
         self.children.append(item)
 
-    def addFile(self, line: str) -> None:
+    def addFile(self, line: str) -> Directory:
         fileSize, fileName = findall(r"([0-9]+) (.+)$", line)[0]
         self.addItem(File(fileName, int(fileSize), len(self.children)))
+        return self
 
-    def addDirectory(self, line: str) -> None:
+    def addDirectory(self, line: str) -> Directory:
         directoryName = search(r"r ([a-z]+)$", line)
         assert directoryName is not None
         self.addItem(Directory(directoryName[1], self, [], len(self.children)))
+        return self
 
-    def getSize(self) -> tuple[int, int]:
+    def getSize(self, maxSize: int) -> tuple[int, int]:
         if self.children is None:
             return (0, 0)
         selfSizeAcc = 0
         directoryAcc = 0
         for item in self.children:
-            itemSize = item.getSize()
+            itemSize = item.getSize(maxSize)
             selfSizeAcc += itemSize[0]
             directoryAcc += itemSize[1]
-        if selfSizeAcc <= MAX_SIZE:
+        if selfSizeAcc <= maxSize:
             directoryAcc += selfSizeAcc
 
         return (selfSizeAcc, directoryAcc)
@@ -91,7 +96,7 @@ def findDirectoryIndex(directoryName: str, items: list[File | Directory]) -> int
         if isinstance(item, Directory):
             if item.name == directoryName:
                 return index
-    raise Exception(f"No directory matching {directoryName} found")
+    raise Exception(f"No directory found matching {directoryName}")
 
 
 def changeDirectory(line: str, activeDirectory: Directory) -> Directory:
@@ -105,9 +110,9 @@ def changeDirectory(line: str, activeDirectory: Directory) -> Directory:
 
 def performTerminalAction(line: str, activeDirectory: Directory) -> Directory:
     if isFile(line):
-        activeDirectory.addFile(line)
+        return activeDirectory.addFile(line)
     elif isDirectory(line):
-        activeDirectory.addDirectory(line)
+        return activeDirectory.addDirectory(line)
     elif isDirectoryChange(line):
         return changeDirectory(line, activeDirectory)
     return activeDirectory
@@ -127,5 +132,8 @@ with open(dataPath) as dataFile:
     for line in dataFile:
         activeDirectory = performTerminalAction(line, activeDirectory)
     activeDirectory = returnDirectoryToRoot(activeDirectory)
-    size = activeDirectory.getSize()
-    print(f"Total size of directories smaller than {MAX_SIZE + 1} " + f"is {size[1]}")
+    size = activeDirectory.getSize(STEP_ONE_SEARCH_SIZE)
+    print(
+        f"Total size of directories smaller than {STEP_ONE_SEARCH_SIZE + 1} "
+        + f"is {size[1]}"
+    )
