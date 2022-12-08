@@ -77,6 +77,15 @@ class Directory(object):
         assert isinstance(newDirectory, Directory)
         return Directory(newDirectory.name, self, newDirectory.children, directoryIndex)
 
+    def getSmallestDirectoryOfSize(self, searchSize: int) -> int:
+        smallestDirectory = self.getSize(TOTAL_DISK_SPACE)[0]
+        for item in self.children:
+            if isinstance(item, Directory):
+                itemSize = item.getSmallestDirectoryOfSize(searchSize)
+                if itemSize < smallestDirectory and itemSize >= searchSize:
+                    smallestDirectory = itemSize
+        return smallestDirectory
+
 
 def isFile(line: str) -> bool:
     return line[0].isdigit()
@@ -136,4 +145,15 @@ with open(dataPath) as dataFile:
     print(
         f"Total size of directories smaller than {STEP_ONE_SEARCH_SIZE + 1} "
         + f"is {size[1]}"
+    )
+    print(f"Total space used: {size[0]}")
+    print(f"Total free space is: {TOTAL_DISK_SPACE-size[0]}")
+    spaceNeededForUpdate = UPDATE_SIZE - (TOTAL_DISK_SPACE - size[0])
+    print(f"You need to free up {spaceNeededForUpdate} space to perform the update")
+    smallestDirectoryToDelete = activeDirectory.getSmallestDirectoryOfSize(
+        spaceNeededForUpdate
+    )
+    print(
+        f"You can delete a directory of size {smallestDirectoryToDelete}"
+        + "to perform this update"
     )
