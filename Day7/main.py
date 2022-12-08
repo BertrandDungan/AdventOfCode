@@ -12,8 +12,8 @@ class File(object):
         self.size = size
         self.itemIndex = itemIndex
 
-    def getSize(self) -> int:
-        return self.size
+    def getSize(self) -> tuple[int, int]:
+        return (self.size, 0)
 
 
 class Directory(object):
@@ -41,17 +41,21 @@ class Directory(object):
         assert directoryName is not None
         self.addItem(Directory(directoryName[1], self, [], len(self.children)))
 
-    def getSize(self) -> int:
+    def getSize(self) -> tuple[int, int]:
         if self.children is None:
-            return 0
+            return (0, 0)
         sizeAcc = 0
+        directoryAcc = 0
         for item in self.children:
             itemSize = item.getSize()
-            if itemSize <= MAX_SIZE:
-                sizeAcc += itemSize
-                if isinstance(item, Directory) and sizeAcc + itemSize <= MAX_SIZE:
-                    sizeAcc += itemSize
-        return sizeAcc
+            sizeAcc += itemSize[0]
+            if isinstance(item, Directory):
+                directoryAcc += itemSize[1]
+                if itemSize[0] <= MAX_SIZE:
+                    directoryAcc += itemSize[0]
+        if sizeAcc > MAX_SIZE:
+            sizeAcc = 0
+        return (sizeAcc, directoryAcc)
 
     def goUpLevel(self) -> Directory:
         assert self.parent is not None
