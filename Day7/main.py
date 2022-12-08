@@ -44,18 +44,17 @@ class Directory(object):
     def getSize(self) -> tuple[int, int]:
         if self.children is None:
             return (0, 0)
-        sizeAcc = 0
+        selfSizeAcc = 0
         directoryAcc = 0
         for item in self.children:
             itemSize = item.getSize()
-            sizeAcc += itemSize[0]
-            if isinstance(item, Directory):
-                directoryAcc += itemSize[1]
-                if itemSize[0] <= MAX_SIZE:
-                    directoryAcc += itemSize[0]
-        if sizeAcc > MAX_SIZE:
-            sizeAcc = 0
-        return (sizeAcc, directoryAcc)
+            selfSizeAcc += itemSize[0]
+            directoryAcc += itemSize[1]
+        if selfSizeAcc > MAX_SIZE:
+            selfSizeAcc = 0
+        else:
+            directoryAcc += selfSizeAcc
+        return (selfSizeAcc, directoryAcc)
 
     def goUpLevel(self) -> Directory:
         assert self.parent is not None
@@ -123,7 +122,7 @@ def returnDirectoryToRoot(activeDirectory: Directory) -> Directory:
     return rootDirectory
 
 
-dataPath = Path(__file__).with_name("Test.txt")
+dataPath = Path(__file__).with_name("Data.txt")
 with open(dataPath) as dataFile:
     activeDirectory = Directory("/")
     for line in dataFile:
