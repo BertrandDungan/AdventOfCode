@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from re import findall, search
+from re import Match, findall, search
 
 MAX_SIZE = 100000
 
@@ -68,12 +68,8 @@ class Directory(object):
             self.parent.itemIndex,
         )
 
-    def changeDirectory(self, line: str) -> Directory:
-        changeDirectoryDirection = search(r"cd ([a-z | .]+)$", line)
-        assert changeDirectoryDirection is not None
-        directoryIndex = findDirectoryIndex(
-            changeDirectoryDirection[1], activeDirectory.children
-        )
+    def changeDirectory(self, direction: Match[str]) -> Directory:
+        directoryIndex = findDirectoryIndex(direction[1], activeDirectory.children)
         newDirectory = self.children[directoryIndex]
         assert isinstance(newDirectory, Directory)
         return Directory(newDirectory.name, self, newDirectory.children, directoryIndex)
@@ -106,7 +102,7 @@ def changeDirectory(line: str, activeDirectory: Directory) -> Directory:
     assert changeDirectoryDirection is not None
     if "." in changeDirectoryDirection[0]:
         return activeDirectory.goUpLevel()
-    return activeDirectory.changeDirectory(line)
+    return activeDirectory.changeDirectory(changeDirectoryDirection)
 
 
 def performTerminalAction(line: str, activeDirectory: Directory) -> Directory:
