@@ -45,8 +45,10 @@ class Directory(object):
         sizeAcc = 0
         for item in self.children:
             itemSize = item.getSize()
-            if itemSize < 100000 or isinstance(item, File):
-                sizeAcc += item.getSize()
+            if itemSize <= 100000:
+                sizeAcc += itemSize
+                if isinstance(item, Directory) and sizeAcc + itemSize <= 100000:
+                    sizeAcc += itemSize
         return sizeAcc
 
     def goUpLevel(self) -> Directory:
