@@ -17,11 +17,46 @@ def treeOnForestEdge(tree: Tree) -> bool:
     return tree.x == 0 or tree.x == forestMaxX or tree.y == 0 or tree.y == forestMaxY
 
 
-def treeTallEnoughToSee(forest: list[Tree], tree: Tree) -> bool:
-    return False
+def treeTallEnoughToSee(forest: list[Tree], searchTree: Tree) -> bool:
+
+    westTrees = [
+        forestTree
+        for forestTree in forest
+        if forestTree.y == searchTree.y
+        and forestTree.x < searchTree.x
+        and forestTree.height >= searchTree.height
+    ]
+    EastTrees = [
+        forestTree
+        for forestTree in forest
+        if forestTree.y == searchTree.y
+        and forestTree.x > searchTree.x
+        and forestTree.height >= searchTree.height
+    ]
+    northTrees = [
+        forestTree
+        for forestTree in forest
+        if forestTree.x == searchTree.x
+        and forestTree.y > searchTree.y
+        and forestTree.height >= searchTree.height
+    ]
+    southTrees = [
+        forestTree
+        for forestTree in forest
+        if forestTree.x == searchTree.x
+        and forestTree.y < searchTree.y
+        and forestTree.height >= searchTree.height
+    ]
+
+    return (
+        len(westTrees) < 1
+        or len(EastTrees) < 1
+        or len(northTrees) < 1
+        or len(southTrees) < 1
+    )
 
 
-dataPath = Path(__file__).with_name("Test.txt")
+dataPath = Path(__file__).with_name("Data.txt")
 with open(dataPath) as dataFile:
     forest: list[Tree] = []
     forestMaxY = 0
