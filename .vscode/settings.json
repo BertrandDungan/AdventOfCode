@@ -1,6 +1,6 @@
 {
     "python.analysis.typeCheckingMode": "basic",
-    "python.linting.mypyEnabled": false,
+    "python.linting.mypyEnabled": true,
     "python.linting.enabled": true,
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter",
