@@ -7,40 +7,52 @@ def treeOnForestEdge(
     return xIndex == 0 or yIndex == 0 or xIndex == forestMaxX or yIndex == forestMaxY
 
 
-def getWestViewLen(
+def westViewLen(
     forest: list[list[int]], xIndex: int, yIndex: int, treeHeight: int
 ) -> int:
-    return len([tree for tree in forest[yIndex][0:xIndex] if tree < treeHeight])
+    lowerTrees = 0
+    for tree in reversed(forest[yIndex][0:xIndex]):
+        if tree < treeHeight:
+            lowerTrees += 1
+        else:
+            return lowerTrees
+    return lowerTrees
 
 
-def getEastViewLen(
+def eastViewLen(
     forest: list[list[int]], xIndex: int, yIndex: int, treeHeight: int, forestMaxX: int
 ) -> int:
-    return len(
-        [
-            tree
-            for tree in forest[yIndex][xIndex + 1 : forestMaxX + 1]
-            if tree < treeHeight
-        ]
-    )
+    lowerTrees = 0
+    for tree in forest[yIndex][xIndex + 1 : forestMaxX + 1]:
+        if tree < treeHeight:
+            lowerTrees += 1
+        else:
+            return lowerTrees
+    return lowerTrees
 
 
-def getNorthViewLen(
+def northViewLen(
     forest: list[list[int]], xIndex: int, yIndex: int, treeHeight: int
 ) -> int:
-    return len([tree[xIndex] for tree in forest[0:yIndex] if tree[xIndex] < treeHeight])
+    lowerTrees = 0
+    for tree in reversed([tree[xIndex] for tree in forest[0:yIndex]]):
+        if tree < treeHeight:
+            lowerTrees += 1
+        else:
+            return lowerTrees
+    return lowerTrees
 
 
-def getSouthViewLen(
+def southViewLen(
     forest: list[list[int]], xIndex: int, yIndex: int, treeHeight: int, forestMaxY: int
 ) -> int:
-    return len(
-        [
-            tree[xIndex]
-            for tree in forest[yIndex + 1 : forestMaxY + 1]
-            if tree[xIndex] < treeHeight
-        ]
-    )
+    lowerTrees = 0
+    for tree in forest[yIndex + 1 : forestMaxY + 1]:
+        if tree[xIndex] < treeHeight:
+            lowerTrees += 1
+        else:
+            return lowerTrees
+    return lowerTrees
 
 
 def treeTallEnoughToSee(
@@ -51,34 +63,47 @@ def treeTallEnoughToSee(
     forestMaxX: int,
     forestMaxY: int,
 ) -> bool:
-    westView = getWestViewLen(forest, xIndex, yIndex, treeHeight)
+    westView = westViewLen(forest, xIndex, yIndex, treeHeight)
     if westView == xIndex:
         return True
-    eastView = getEastViewLen(forest, xIndex, yIndex, treeHeight, forestMaxX)
+    eastView = eastViewLen(forest, xIndex, yIndex, treeHeight, forestMaxX)
     if eastView == forestMaxX - xIndex:
         return True
-    northView = getNorthViewLen(forest, xIndex, yIndex, treeHeight)
+    northView = northViewLen(forest, xIndex, yIndex, treeHeight)
     if northView == yIndex:
         return True
-    southView = getSouthViewLen(forest, xIndex, yIndex, treeHeight, forestMaxY)
+    southView = southViewLen(forest, xIndex, yIndex, treeHeight, forestMaxY)
     if southView == forestMaxY - yIndex:
         return True
     return False
 
 
 def getTreeScore(
-    forest, xIndex: int, yIndex: int, treeHeight: int, forestMaxX: int, forestMaxY: int
+    forest: list[list[int]],
+    xIndex: int,
+    yIndex: int,
+    treeHeight: int,
+    forestMaxX: int,
+    forestMaxY: int,
 ) -> int:
-    return (
-        getWestViewLen(forest, xIndex, yIndex, treeHeight)
-        * getEastViewLen(forest, xIndex, yIndex, treeHeight, forestMaxX)
-        * getNorthViewLen(forest, xIndex, yIndex, treeHeight)
-        * getSouthViewLen(forest, xIndex, yIndex, treeHeight, forestMaxY)
-    )
+    westView = westViewLen(forest, xIndex, yIndex, treeHeight)
+    if westView != xIndex:
+        westView += 1
+    eastView = eastViewLen(forest, xIndex, yIndex, treeHeight, forestMaxX)
+    if eastView != forestMaxX - xIndex:
+        eastView += 1
+    northView = northViewLen(forest, xIndex, yIndex, treeHeight)
+    if northView != yIndex:
+        northView += 1
+    southView = southViewLen(forest, xIndex, yIndex, treeHeight, forestMaxY)
+    if southView != forestMaxY - yIndex:
+        southView += 1
+    treeScore = westView * eastView * northView * southView
+    return treeScore
 
 
 def main() -> None:
-    dataPath = Path(__file__).with_name("Test.txt")
+    dataPath = Path(__file__).with_name("Data.txt")
     with open(dataPath) as dataFile:
         forestLines = enumerate(dataFile)
         forest: list[list[int]] = []
@@ -108,7 +133,6 @@ def main() -> None:
                 )
                 if treeScore > bestTreeScore:
                     bestTreeScore = treeScore
-                pass
         print(f"You can see {treesVisibleFromOutside} trees from outside")
         print(f"The best tree score is: {bestTreeScore}")
 
