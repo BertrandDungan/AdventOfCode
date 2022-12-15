@@ -55,6 +55,22 @@ def southViewLen(
     return lowerTrees
 
 
+def westViewTouchesEdge(westView: int, xIndex: int) -> bool:
+    return westView == xIndex
+
+
+def eastViewTouchesEdge(eastView: int, forestMaxX: int, xIndex: int) -> bool:
+    return eastView == forestMaxX - xIndex
+
+
+def northViewTouchesEdge(northView: int, yIndex: int) -> bool:
+    return northView == yIndex
+
+
+def southViewTouchesEdge(southView: int, forestMaxY: int, yIndex: int) -> bool:
+    return southView == forestMaxY - yIndex
+
+
 def treeTallEnoughToSee(
     forest: list[list[int]],
     treeHeight: int,
@@ -64,16 +80,16 @@ def treeTallEnoughToSee(
     forestMaxY: int,
 ) -> bool:
     westView = westViewLen(forest, xIndex, yIndex, treeHeight)
-    if westView == xIndex:
+    if westViewTouchesEdge(westView, xIndex):
         return True
     eastView = eastViewLen(forest, xIndex, yIndex, treeHeight, forestMaxX)
-    if eastView == forestMaxX - xIndex:
+    if eastViewTouchesEdge(eastView, forestMaxX, xIndex):
         return True
     northView = northViewLen(forest, xIndex, yIndex, treeHeight)
-    if northView == yIndex:
+    if northViewTouchesEdge(northView, yIndex):
         return True
     southView = southViewLen(forest, xIndex, yIndex, treeHeight, forestMaxY)
-    if southView == forestMaxY - yIndex:
+    if southViewTouchesEdge(southView, forestMaxY, yIndex):
         return True
     return False
 
@@ -87,16 +103,16 @@ def getTreeScore(
     forestMaxY: int,
 ) -> int:
     westView = westViewLen(forest, xIndex, yIndex, treeHeight)
-    if westView != xIndex:
+    if not westViewTouchesEdge(westView, xIndex):
         westView += 1
     eastView = eastViewLen(forest, xIndex, yIndex, treeHeight, forestMaxX)
-    if eastView != forestMaxX - xIndex:
+    if not eastViewTouchesEdge(eastView, forestMaxX, xIndex):
         eastView += 1
     northView = northViewLen(forest, xIndex, yIndex, treeHeight)
-    if northView != yIndex:
+    if not northViewTouchesEdge(northView, yIndex):
         northView += 1
     southView = southViewLen(forest, xIndex, yIndex, treeHeight, forestMaxY)
-    if southView != forestMaxY - yIndex:
+    if not southViewTouchesEdge(southView, forestMaxY, yIndex):
         southView += 1
     treeScore = westView * eastView * northView * southView
     return treeScore
