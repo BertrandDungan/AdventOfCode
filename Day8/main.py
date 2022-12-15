@@ -1,5 +1,4 @@
 from pathlib import Path
-from re import search
 
 
 def treeOnForestEdge(
@@ -11,7 +10,6 @@ def treeOnForestEdge(
 def getWestViewLen(
     forest: list[list[int]], xIndex: int, yIndex: int, treeHeight: int
 ) -> int:
-    westSlice = str([tree for tree in forest[yIndex][0:xIndex]])
     return len([tree for tree in forest[yIndex][0:xIndex] if tree < treeHeight])
 
 
