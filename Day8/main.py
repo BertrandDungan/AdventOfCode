@@ -1,71 +1,47 @@
-from dataclasses import dataclass
 from pathlib import Path
 
 
-@dataclass(frozen=True)
-class Tree:
-    height: int
-    x: int
-    y: int
+def treeOnForestEdge(
+    xIndex: int, yIndex: int, forestMaxX: int, forestMaxY: int
+) -> bool:
+    return xIndex == 0 or yIndex == 0 or xIndex == forestMaxX or yIndex == forestMaxY
 
 
-def makeTree(treeHeight: str, xPosition: int, yPosition: int) -> Tree:
-    return Tree(int(treeHeight), xPosition, yPosition)
-
-
-def treeOnForestEdge(xIndex: int, yIndex: int, forestMaxX, forestMaxY) -> bool:
-    return xIndex == 0 or yIndex == forestMaxX or tree.y == 0 or tree.y == forestMaxY
-
-
-def getTreesInView(forest: list[Tree], searchTree: Tree) -> list[list[Tree]]:
-    return [
-        [
-            forestTree
-            for forestTree in forest
-            if forestTree.y == searchTree.y
-            and forestTree.x < searchTree.x
-            and forestTree.height >= searchTree.height
-        ],
-        [
-            forestTree
-            for forestTree in forest
-            if forestTree.y == searchTree.y
-            and forestTree.x > searchTree.x
-            and forestTree.height >= searchTree.height
-        ],
-        [
-            forestTree
-            for forestTree in forest
-            if forestTree.x == searchTree.x
-            and forestTree.y > searchTree.y
-            and forestTree.height >= searchTree.height
-        ],
-        [
-            forestTree
-            for forestTree in forest
-            if forestTree.x == searchTree.x
-            and forestTree.y < searchTree.y
-            and forestTree.height >= searchTree.height
-        ],
+def treeTallEnoughToSee(
+    forest: list[list[int]],
+    treeHeight: int,
+    xIndex: int,
+    yIndex: int,
+    forestMaxX: int,
+    forestMaxY: int,
+) -> bool:
+    westView = [tree for tree in forest[yIndex][0:xIndex] if tree < treeHeight]
+    if len(westView) == xIndex:
+        return True
+    eastView = [
+        tree
+        for tree in forest[yIndex][xIndex + 1 : forestMaxX + 1]
+        if tree < treeHeight
     ]
-
-
-def treeTallEnoughToSee(forest, tree, xIndex, yIndex, forestMaxX, forestMaxY) -> bool:
-    # for xIndex in range(xIndex, forestMaxX):
+    if len(eastView) == forestMaxX - xIndex:
+        return True
+    northView = [tree[xIndex] for tree in forest[0:yIndex] if tree[xIndex] < treeHeight]
+    if len(northView) == yIndex:
+        return True
+    southView = [
+        tree[xIndex]
+        for tree in forest[yIndex + 1 : forestMaxY + 1]
+        if tree[xIndex] < treeHeight
+    ]
+    if len(southView) == forestMaxY - yIndex:
+        return True
     return False
-    # return any(len(tree) < 1 for tree in treesInView)
 
 
-def getTreeScore(
-    blockingTrees: list[list[Tree]], treeToScore: Tree, maxY: int, maxX: int
-) -> int:
-    return 0
-
-
-dataPath = Path(__file__).with_name("Test.txt")
+dataPath = Path(__file__).with_name("Data.txt")
 with open(dataPath) as dataFile:
     forestLines = enumerate(dataFile)
-    forest = []
+    forest: list[list[int]] = []
     forestMaxX = 0
     forestMaxY = 0
     for yIndex, line in forestLines:
@@ -79,8 +55,8 @@ with open(dataPath) as dataFile:
         forestMaxY = yIndex
     treesVisibleFromOutside = 0
     bestTreeScore = 0
-    for xIndex, treeLine in enumerate(forest):
-        for yIndex, tree in enumerate(treeLine):
+    for yIndex, treeLine in enumerate(forest):
+        for xIndex, tree in enumerate(treeLine):
             if treeOnForestEdge(xIndex, yIndex, forestMaxX, forestMaxY):
                 treesVisibleFromOutside += 1
             elif treeTallEnoughToSee(
@@ -91,6 +67,5 @@ with open(dataPath) as dataFile:
             # if treeScore > bestTreeScore:
             #     bestTreeScore = treeScore
             # bestTree = tree
-
     print(f"You can see {treesVisibleFromOutside} trees from outside")
     print(f"The best tree score is: {bestTreeScore}")
