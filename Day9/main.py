@@ -28,22 +28,51 @@ def moveHead(command: str, ropeHead: RopeHead) -> RopeHead:
     raise Exception("No matching command found")
 
 
-def newTailVisit(ropeTail: RopeTail, placesVisitedByTail: list[list[int]]) -> bool:
-    return False
+def addVisitIfNew(ropeTail: RopeTail, placesVisitedByTail: set[str]) -> set[str]:
+    placesVisitedByTail.add(f"{ropeTail.x_position}{ropeTail.y_position}")
+    return placesVisitedByTail
 
 
 def moveTail(ropeHead: RopeHead, ropeTail: RopeTail) -> RopeTail:
     new_x_pos = ropeTail.x_position
     new_y_pos = ropeTail.y_position
-    if ropeHead.x_position > ropeTail.x_position + 1:
-        new_x_pos += 1
-    elif ropeHead.x_position < ropeTail.x_position - 1:
-        new_x_pos -= 1
-    if ropeHead.y_position > ropeTail.y_position + 1:
-        new_y_pos += 1
-    elif ropeHead.y_position < ropeTail.y_position:
-        new_y_pos -= 1
-    return ropeTail
+    if ropeHead.y_position == ropeTail.y_position:
+        if ropeHead.x_position > ropeTail.x_position + 1:
+            new_x_pos += 1
+        elif ropeHead.x_position < ropeTail.x_position - 1:
+            new_x_pos -= 1
+    elif ropeHead.x_position == ropeTail.x_position:
+        if ropeHead.y_position > ropeTail.y_position + 1:
+            new_y_pos += 1
+        elif ropeHead.y_position < ropeTail.y_position - 1:
+            new_y_pos -= 1
+    elif (
+        ropeHead.y_position != ropeTail.y_position
+        and ropeHead.x_position != ropeTail.x_position
+        and (
+            ropeHead.x_position > ropeTail.x_position + 1
+            or ropeHead.x_position < ropeTail.x_position - 1
+            or ropeHead.y_position > ropeTail.y_position + 1
+            or ropeHead.y_position < ropeTail.y_position - 1
+        )
+    ):
+        if ropeHead.x_position > ropeTail.x_position:
+            if ropeHead.y_position > ropeTail.y_position:
+                new_x_pos += 1
+                new_y_pos += 1
+            elif ropeHead.y_position < ropeTail.y_position:
+                new_x_pos += 1
+                new_y_pos -= 1
+        elif ropeHead.x_position < ropeTail.x_position:
+            if ropeHead.y_position > ropeTail.y_position:
+                new_x_pos -= 1
+                new_y_pos += 1
+
+            elif ropeHead.y_position < ropeTail.y_position:
+                new_x_pos -= 1
+                new_y_pos -= 1
+
+    return RopeTail(new_x_pos, new_y_pos)
 
 
 def interpretMove(command: str) -> tuple[str, int]:
@@ -56,14 +85,13 @@ def performCommand(
     command: str,
     ropeHead: RopeHead,
     ropeTail: RopeTail,
-    placesVisitedByTail: list[list[int]],
-) -> tuple[RopeHead, RopeTail, list[list[int]]]:
+    placesVisitedByTail: set[str],
+) -> tuple[RopeHead, RopeTail, set[str]]:
     directionToMove, magnitude = interpretMove(command)
     for _ in range(magnitude):
         ropeHead = moveHead(directionToMove, ropeHead)
         ropeTail = moveTail(ropeHead, ropeTail)
-        if newTailVisit(ropeTail, placesVisitedByTail):
-            placesVisitedByTail = []
+        placesVisitedByTail = addVisitIfNew(ropeTail, placesVisitedByTail)
     return (ropeHead, ropeTail, placesVisitedByTail)
 
 
@@ -72,13 +100,14 @@ def main() -> None:
     with open(dataPath) as dataFile:
         ropeHead = RopeHead(0, 0)
         ropeTail = RopeTail(0, 0)
-        placesVisitedByTail: list[list[int]] = [[0, 0]]
+        placesVisitedByTail: set[str] = {"00"}
         for command in dataFile:
             ropeHead, ropeTail, placesVisitedByTail = performCommand(
                 command, ropeHead, ropeTail, placesVisitedByTail
             )
 
         print(placesVisitedByTail)
+        print(len(placesVisitedByTail))
 
 
 main()
