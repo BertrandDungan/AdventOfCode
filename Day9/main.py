@@ -29,7 +29,7 @@ def moveHead(command: str, ropeHead: RopeHead) -> RopeHead:
 
 
 def addVisitIfNew(ropeTail: RopeTail, placesVisitedByTail: set[str]) -> set[str]:
-    placesVisitedByTail.add(f"{ropeTail.x_position}{ropeTail.y_position}")
+    placesVisitedByTail.add(f"{ropeTail.x_position},{ropeTail.y_position}")
     return placesVisitedByTail
 
 
@@ -93,14 +93,13 @@ def main() -> None:
     with open(dataPath) as dataFile:
         ropeHead = RopeHead(0, 0)
         ropeTail = RopeTail(0, 0)
-        placesVisitedByTail: set[str] = {"00"}
+        placesVisitedByTail: set[str] = {"0,0"}
         for command in dataFile:
             ropeHead, ropeTail, placesVisitedByTail = performCommand(
                 command, ropeHead, ropeTail, placesVisitedByTail
             )
 
-        # print(placesVisitedByTail)
-        print(len(placesVisitedByTail))
+        print(f"The tail visits {len(placesVisitedByTail)} distinct spots")
 
 
 main()
