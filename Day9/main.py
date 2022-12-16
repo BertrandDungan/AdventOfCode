@@ -71,20 +71,6 @@ def interpretMove(command: str) -> tuple[str, int]:
 def performCommand(
     command: str,
     ropeHead: RopePiece,
-    ropeTail: RopePiece,
-    placesVisitedByTail: set[str],
-) -> tuple[RopePiece, RopePiece, set[str]]:
-    directionToMove, magnitude = interpretMove(command)
-    for _ in range(magnitude):
-        ropeHead = moveHead(directionToMove, ropeHead)
-        ropeTail = moveTail(ropeHead, ropeTail)
-        placesVisitedByTail = addVisitIfNew(ropeTail, placesVisitedByTail)
-    return (ropeHead, ropeTail, placesVisitedByTail)
-
-
-def performCommandTen(
-    command: str,
-    ropeHead: RopePiece,
     ropeList: list[RopePiece],
     placesVisitedByTail: set[str],
 ) -> tuple[RopePiece, list[RopePiece], set[str]]:
@@ -104,7 +90,7 @@ def main() -> None:
     dataPath = Path(__file__).with_name("Data.txt")
     with open(dataPath) as dataFile:
         ropeHead = RopePiece(0, 0)
-        ropeTail = RopePiece(0, 0)
+        ropeTail = [RopePiece(0, 0)]
         placesVisitedByTail: set[str] = {"0,0"}
         for command in dataFile:
             ropeHead, ropeTail, placesVisitedByTail = performCommand(
@@ -132,7 +118,7 @@ def main() -> None:
                 tenPieceRopeHead,
                 tenPieceRopeTail,
                 placesVisitedByTenPieceTail,
-            ) = performCommandTen(
+            ) = performCommand(
                 command, tenPieceRopeHead, tenPieceRopeTail, placesVisitedByTenPieceTail
             )
         print(
