@@ -1,23 +1,22 @@
 from dataclasses import dataclass
+from functools import reduce
 from operator import add, mul
 from pathlib import Path
 from re import findall
 from typing import Callable
 
-common_divisor = 100
-
 
 @dataclass()
 class Monkey:
-    items: list[float]
-    operation: Callable[[float], float]
+    items: list[int]
+    operation: Callable[[int], int]
     testDivision: int
     truthMonkey: int
     falseMonkey: int
     inspections: int
 
 
-def operatorToFunc(operator: str) -> Callable[[float, float], float]:
+def operatorToFunc(operator: str) -> Callable[[int, int], int]:
     if operator == "*":
         return mul
     if operator == "+":
@@ -26,15 +25,15 @@ def operatorToFunc(operator: str) -> Callable[[float, float], float]:
 
 
 def partialMonkeyOperation(
-    operand: str, baseFunction: Callable[[float, float], float]
-) -> Callable[[float], float]:
+    operand: str, baseFunction: Callable[[int, int], int]
+) -> Callable[[int], int]:
     if operand == "old":
-        return lambda number: pow(number / common_divisor, 2)
-    return lambda number: baseFunction(number, int(operand) / common_divisor)
+        return lambda number: pow(number, 2)
+    return lambda number: baseFunction(number, int(operand))
 
 
 def main() -> None:
-    dataPath = Path(__file__).with_name("Test.txt")
+    dataPath = Path(__file__).with_name("Data.txt")
     with open(dataPath) as dataFile:
         file = dataFile.read()
         monkeyMatches = findall(
@@ -48,7 +47,7 @@ def main() -> None:
             operand: str = monkey[2]
             monkeyList.append(
                 Monkey(
-                    [float(item) / common_divisor for item in monkeyItems.split(",")],
+                    [int(item) for item in monkeyItems.split(",")],
                     partialMonkeyOperation(operand, operatorToFunc(operator)),
                     int(monkey[3]),
                     int(monkey[4]),
@@ -68,24 +67,30 @@ def main() -> None:
         #         monkey.items = []
         # monkeyList.sort(key=lambda monkey: monkey.inspections)
         # smallMonkeyBusiness = monkeyList[-1].inspections * monkeyList[-2].inspections
-        # print(f"Monkey business with less worry = {smallMonkeyBusiness}")
-
-        # for _ in range(10_000):
-        #     for monkey in monkeyList:
-        #         for item in monkey.items:
-        #             monkey.inspections += 1
-        #             worry = monkey.operation(item)
-        #             if worry % monkey.testDivision < 1:
-        #                 monkeyList[monkey.truthMonkey].items.append(worry)
-        #             else:
-        #                 monkeyList[monkey.falseMonkey].items.append(worry)
-        #         monkey.items = []
-        # monkeyList.sort(key=lambda monkey: monkey.inspections)
-        # maxMonkeyBusiness = monkeyList[-1].inspections * monkeyList[-2].inspections
-        # print(f"Max Monkey business = {maxMonkeyBusiness}")
         # print(monkeyList[-1].inspections)
         # print(monkeyList[-2].inspections)
-        # print(f"Max Monkey business = {2_713_310_158}")
+        # print(f"Monkey business with less worry = {smallMonkeyBusiness}")
+
+        product_of_all_divisors: int = reduce(
+            mul, [monkey.testDivision for monkey in monkeyList]
+        )
+
+        for _ in range(10_000):
+            for monkey in monkeyList:
+                for item in monkey.items:
+                    monkey.inspections += 1
+                    worry = monkey.operation(item) % product_of_all_divisors
+                    if worry % monkey.testDivision < 1:
+                        monkeyList[monkey.truthMonkey].items.append(worry)
+                    else:
+                        monkeyList[monkey.falseMonkey].items.append(worry)
+                monkey.items = []
+        monkeyList.sort(key=lambda monkey: monkey.inspections)
+        maxMonkeyBusiness = monkeyList[-1].inspections * monkeyList[-2].inspections
+        print(f"Max Monkey business = {maxMonkeyBusiness}")
+        print(monkeyList[-1].inspections)
+        print(monkeyList[-2].inspections)
+        print(f"Max Monkey business = {2_713_310_158}")
 
 
 main()
