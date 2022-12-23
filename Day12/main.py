@@ -14,10 +14,14 @@ class Node:
     distanceToStart: Optional[int] = None
 
 
-def generateMap(file: TextIOWrapper) -> list[list[Node]]:
+def generateMap(file: TextIOWrapper, allAZero=False) -> list[list[Node]]:
     return [
         [
-            Node(character, (columnNumber, rowNumber), 0 if character == "a" else None)
+            Node(
+                character,
+                (columnNumber, rowNumber),
+                0 if allAZero and character == "a" else None,
+            )
             for columnNumber, character in enumerate(lineText)
             if character != "\n"
         ]
@@ -32,16 +36,16 @@ def canTraverse(currentHeight: str, comparisonHeight: str) -> bool:
     )
 
 
-def getNodeNeighbours(
-    currentNode: Node, mapHeight: int, mapWidth: int
-) -> list[Optional[tuple[int, int]]]:
+def nodeNeighbourGenerator(currentNode: Node, mapHeight: int, mapWidth: int):
     xPosition, yPosition = currentNode.position
-    return [
-        (xPosition + 1, yPosition) if xPosition < mapWidth else None,
-        (xPosition - 1, yPosition) if xPosition > 0 else None,
-        (xPosition, yPosition + 1) if yPosition < mapHeight else None,
-        (xPosition, yPosition - 1) if yPosition > 0 else None,
-    ]
+    if xPosition < mapWidth - 1:
+        yield (xPosition + 1, yPosition)
+    if xPosition > 0:
+        yield (xPosition - 1, yPosition)
+    if yPosition < mapHeight - 1:
+        yield (xPosition, yPosition + 1)
+    if yPosition > 0:
+        yield (xPosition, yPosition - 1)
 
 
 def flatten(listOfLists: list[list[T]]) -> list[T]:
@@ -51,6 +55,8 @@ def flatten(listOfLists: list[list[T]]) -> list[T]:
 def dijkstraSearch(
     map: list[list[Node]], start: tuple[int, int], end: tuple[int, int]
 ) -> int:
+    mapHeight = len(map)
+    mapWidth = len(map[0])
     currentNode = map[start[1]][start[0]]
     unvisitedNodes = flatten(map)
 
@@ -69,21 +75,17 @@ def dijkstraSearch(
             else math.inf,
         )
         currentNode = unvisitedNodes[0]
-        mapHeight = len(map)
-        mapWidth = len(map[0])
-        nodeNeighbours = getNodeNeighbours(currentNode, mapHeight - 1, mapWidth - 1)
-        for node in nodeNeighbours:
-            if node is not None:
-                comparisonNode = map[node[1]][node[0]]
-                assert currentNode.distanceToStart is not None
-                if canTraverse(currentNode.height, comparisonNode.height):
-                    if node[0] == end[0] and node[1] == end[1]:
-                        return currentNode.distanceToStart + 1
-                    if (
-                        comparisonNode.distanceToStart is None
-                        or comparisonNode.distanceToStart > currentNode.distanceToStart
-                    ):
-                        comparisonNode.distanceToStart = currentNode.distanceToStart + 1
+        for node in nodeNeighbourGenerator(currentNode, mapHeight, mapWidth):
+            comparisonNode = map[node[1]][node[0]]
+            assert currentNode.distanceToStart is not None
+            if canTraverse(currentNode.height, comparisonNode.height):
+                if node[0] == end[0] and node[1] == end[1]:
+                    return currentNode.distanceToStart + 1
+                if (
+                    comparisonNode.distanceToStart is None
+                    or comparisonNode.distanceToStart > currentNode.distanceToStart
+                ):
+                    comparisonNode.distanceToStart = currentNode.distanceToStart + 1
         unvisitedNodes = [
             stillUnvisited
             for stillUnvisited in unvisitedNodes
@@ -96,11 +98,15 @@ def dijkstraSearch(
 def main() -> None:
     dataPath = Path(__file__).with_name("Data.txt")
     with open(dataPath) as dataFile:
-        map: list[list[Node]] = generateMap(dataFile)
         STARTING_POSITION = (0, 20)
         END_POSITION = (135, 20)
-        distance = dijkstraSearch(map, STARTING_POSITION, END_POSITION)
-        print(f"The shortest path takes {distance} steps")
+        map: list[list[Node]] = generateMap(dataFile)
+        dataFile.seek(0)
+        distanceFromStart = dijkstraSearch(map, STARTING_POSITION, END_POSITION)
+        print(f"The shortest path from the start takes {distanceFromStart} steps")
+        mapA: list[list[Node]] = generateMap(dataFile, True)
+        distanceFromAnyA = dijkstraSearch(mapA, STARTING_POSITION, END_POSITION)
+        print(f"The shortest path from any 'a' takes {distanceFromAnyA} steps")
 
 
 main()
