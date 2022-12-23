@@ -17,7 +17,7 @@ class Node:
 def generateMap(file: TextIOWrapper) -> list[list[Node]]:
     return [
         [
-            Node(character, (columnNumber, rowNumber))
+            Node(character, (columnNumber, rowNumber), 0 if character == "a" else None)
             for columnNumber, character in enumerate(lineText)
             if character != "\n"
         ]
@@ -76,10 +76,7 @@ def dijkstraSearch(
             if node is not None:
                 comparisonNode = map[node[1]][node[0]]
                 assert currentNode.distanceToStart is not None
-                if comparisonNode.height == "a":
-                    comparisonNode.distanceToStart = 0
-                    currentNode.distanceToStart = 1
-                elif canTraverse(currentNode.height, comparisonNode.height):
+                if canTraverse(currentNode.height, comparisonNode.height):
                     if node[0] == end[0] and node[1] == end[1]:
                         return currentNode.distanceToStart + 1
                     if (
@@ -104,7 +101,6 @@ def main() -> None:
         END_POSITION = (135, 20)
         distance = dijkstraSearch(map, STARTING_POSITION, END_POSITION)
         print(f"The shortest path takes {distance} steps")
-        # 175 was too low
 
 
 main()
