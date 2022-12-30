@@ -12,35 +12,37 @@ def checkPacketOrder(leftPacket: PacketType, rightPacket: PacketType) -> Optiona
         comparisonPacket = rightPacket[index]
         if isinstance(item, int):
             if isinstance(comparisonPacket, int):
-                if item < comparisonPacket:
-                    return True
-                elif item > comparisonPacket:
-                    return False
+                if item != comparisonPacket:
+                    return item < comparisonPacket
             elif isinstance(comparisonPacket, list):
-                if not checkPacketOrder([item], comparisonPacket):
-                    return False
-        if isinstance(item, list):
+                result = checkPacketOrder([item], comparisonPacket)
+                if result is not None:
+                    return result
+        elif isinstance(item, list):
             if isinstance(comparisonPacket, int):
-                if not checkPacketOrder(item, [comparisonPacket]):
-                    return False
+                result = checkPacketOrder(item, [comparisonPacket])
+                if result is not None:
+                    return result
             elif isinstance(comparisonPacket, list):
-                if not checkPacketOrder(item, comparisonPacket):
-                    return False
-    if len(rightPacket) < len(leftPacket):
-        return False
-    return True
+                result = checkPacketOrder(item, comparisonPacket)
+                if result is not None:
+                    return result
+    if len(leftPacket) < len(rightPacket):
+        return True
+    return None
 
 
 def comparePackets(
     leftPackets: list[PacketType], rightPackets: list[PacketType]
 ) -> Generator[int, None, None]:
     for index, packet in enumerate(leftPackets):
-        if checkPacketOrder(packet, rightPackets[index]):
+        result = checkPacketOrder(packet, rightPackets[index])
+        if result or result is None:
             yield index + 1
 
 
 def main() -> None:
-    dataPath = Path(__file__).with_name("ExtraTest.txt")
+    dataPath = Path(__file__).with_name("Data.txt")
     with open(dataPath) as dataFile:
         dataString = dataFile.readlines()
         leftPackets: list[PacketType] = [
@@ -52,7 +54,6 @@ def main() -> None:
         correctOrderIndexes = comparePackets(leftPackets, rightPackets)
         indexSum = sum(correctOrderIndexes)
         print(f"The sum of correct indexes is {indexSum}")
-        # 690 too low
 
 
 main()
