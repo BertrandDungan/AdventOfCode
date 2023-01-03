@@ -2,7 +2,7 @@ from pathlib import Path
 from re import findall
 from typing import Generator, Literal, Tuple, Union
 
-CaveType = Union[Literal["#"], Literal["."], Literal["+"]]
+CaveType = Union[Literal["#"], Literal["."], Literal["+"], Literal["o"]]
 
 
 def addRocks(
@@ -80,20 +80,80 @@ def getCaveShapes(
     return cavePoints
 
 
+def addSandSource(cave: list[list[CaveType]], lowestX: int) -> None:
+    cave[0][500 - lowestX] = "+"
+
+
+def removeOldSandBlock(
+    cave: list[list[CaveType]], sandPosition: Tuple[int, int]
+) -> None:
+    cave[sandPosition[1]][sandPosition[0]] = "."
+
+
+def simulateFallingSand(
+    lowestX: int, highestY: int, caveWidth: int, cave: list[list[CaveType]]
+) -> None:
+    sandHasNotFallenOff = True
+    while sandHasNotFallenOff:
+        sandCanMove = True
+        sandPosition: Tuple[int, int] = (500 - lowestX, 1)
+        while sandCanMove:
+            down = sandPosition[1] + 1
+            right = sandPosition[0] + 1
+            left = sandPosition[0] - 1
+            if down > highestY - 1:
+                sandHasNotFallenOff = False
+                sandCanMove = False
+                removeOldSandBlock(cave, sandPosition)
+                break
+            elif left < 0:
+                sandHasNotFallenOff = False
+                sandCanMove = False
+                removeOldSandBlock(cave, sandPosition)
+                break
+            elif right > caveWidth - 1:
+                sandHasNotFallenOff = False
+                sandCanMove = False
+                removeOldSandBlock(cave, sandPosition)
+                break
+            canMoveDown = cave[down][sandPosition[0]] == "."
+            canMoveLeft = cave[down][left] == "."
+            canMoveRight = cave[down][right] == "."
+            if canMoveDown:
+                removeOldSandBlock(cave, sandPosition)
+                cave[down][sandPosition[0]] = "o"
+                sandPosition = (sandPosition[0], down)
+            elif canMoveLeft:
+                removeOldSandBlock(cave, sandPosition)
+                cave[down][left] = "o"
+                sandPosition = (left, down)
+            elif canMoveRight:
+                removeOldSandBlock(cave, sandPosition)
+                cave[down][right] = "o"
+                sandPosition = (right, down)
+            elif not canMoveDown and not canMoveLeft and not canMoveRight:
+                sandCanMove = False
+
+
 def main() -> None:
-    dataPath = Path(__file__).with_name("Test.txt")
+    dataPath = Path(__file__).with_name("Data.txt")
     with open(dataPath) as dataFile:
         caveLines = dataFile.readlines()
         cavePoints = getShapePoints(caveLines)
         lowestX, highestX, highestY = getCaveBounds(cavePoints)
-        caveWidth = range(highestX - lowestX)
+        caveWidth = highestX - lowestX
         caveShapes = pointToShapes(cavePoints)
-        cave: list[list[CaveType]] = [["." for _ in caveWidth] for _ in range(highestY)]
+        cave: list[list[CaveType]] = [
+            ["." for _ in range(caveWidth)] for _ in range(highestY)
+        ]
         addRocks(cave, caveShapes, lowestX)
-        pass
-        # sandMoving = True
-        # while sandMoving:
-        #     cave, sandMoving = simulateCave(cave)
+        addSandSource(cave, lowestX)
+        simulateFallingSand(lowestX, highestY, caveWidth, cave)
+
+        numberOfSandBlocks = 0
+        for caveRow in cave:
+            numberOfSandBlocks += caveRow.count("o")
+        print(f"There are {numberOfSandBlocks} blocks of sand in this cave")
 
 
 main()
