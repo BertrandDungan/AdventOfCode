@@ -91,17 +91,18 @@ def removeOldSandBlock(
 
 
 def simulateFallingSand(
-    lowestX: int, highestY: int, caveWidth: int, cave: list[list[CaveType]]
+    lowestX: int, caveWidth: int, cave: list[list[CaveType]]
 ) -> None:
+    caveHeight = len(cave)
     sandHasNotFallenOff = True
     while sandHasNotFallenOff:
         sandCanMove = True
-        sandPosition: Tuple[int, int] = (500 - lowestX, 1)
+        sandPosition: Tuple[int, int] = (500 - lowestX, 0)
         while sandCanMove:
             down = sandPosition[1] + 1
             right = sandPosition[0] + 1
             left = sandPosition[0] - 1
-            if down > highestY - 1:
+            if down > caveHeight - 1:
                 sandHasNotFallenOff = False
                 sandCanMove = False
                 removeOldSandBlock(cave, sandPosition)
@@ -133,6 +134,14 @@ def simulateFallingSand(
                 sandPosition = (right, down)
             elif not canMoveDown and not canMoveLeft and not canMoveRight:
                 sandCanMove = False
+        if sandPosition[0] == 500 - lowestX and sandPosition[1] == 0:
+            cave[0][500 - lowestX] = "o"
+            sandHasNotFallenOff = False
+
+
+def addFloor(cave: list[list[CaveType]], floorIndex: int, caveWidth: int) -> None:
+    floor: list[CaveType] = ["#" for _ in range(caveWidth)]
+    cave[floorIndex] = floor
 
 
 def main() -> None:
@@ -148,10 +157,24 @@ def main() -> None:
         ]
         addRocks(cave, caveShapes, lowestX)
         addSandSource(cave, lowestX)
-        simulateFallingSand(lowestX, highestY, caveWidth, cave)
+        simulateFallingSand(lowestX, caveWidth, cave)
 
         numberOfSandBlocks = 0
         for caveRow in cave:
+            numberOfSandBlocks += caveRow.count("o")
+        print(f"There are {numberOfSandBlocks} blocks of sand in this cave")
+
+        highestX = highestX * 2
+        lowestX = lowestX // 2
+        caveWidth = highestX - lowestX
+        caveWithFloor: list[list[CaveType]] = [
+            ["." for _ in range(caveWidth)] for _ in range(highestY + 2)
+        ]
+        addRocks(caveWithFloor, caveShapes, lowestX)
+        addFloor(caveWithFloor, highestY + 1, caveWidth)
+        simulateFallingSand(lowestX, caveWidth, caveWithFloor)
+        numberOfSandBlocks = 0
+        for caveRow in caveWithFloor:
             numberOfSandBlocks += caveRow.count("o")
         print(f"There are {numberOfSandBlocks} blocks of sand in this cave")
 
