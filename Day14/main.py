@@ -1,3 +1,4 @@
+from io import TextIOWrapper
 from pathlib import Path
 from re import findall
 from typing import Generator, Literal, Tuple, Union
@@ -41,7 +42,8 @@ def findShapesInText(line: str) -> list[Tuple[int, int]]:
     return [(int(coordPair[0]), int(coordPair[1])) for coordPair in shapeCords]
 
 
-def getShapePoints(caveLines: list[str]) -> list[list[Tuple[int, int]]]:
+def getShapePoints(dataFile: TextIOWrapper) -> list[list[Tuple[int, int]]]:
+    caveLines: list[str] = dataFile.readlines()
     return [findShapesInText(line) for line in caveLines]
 
 
@@ -78,10 +80,6 @@ def getCaveShapes(
     cavePoints: list[list[Tuple[int, int]]]
 ) -> list[list[Tuple[int, int]]]:
     return cavePoints
-
-
-def addSandSource(cave: list[list[CaveType]], lowestX: int) -> None:
-    cave[0][500 - lowestX] = "+"
 
 
 def removeOldSandBlock(
@@ -132,7 +130,7 @@ def simulateFallingSand(
                 removeOldSandBlock(cave, sandPosition)
                 cave[down][right] = "o"
                 sandPosition = (right, down)
-            elif not canMoveDown and not canMoveLeft and not canMoveRight:
+            else:
                 sandCanMove = False
         if sandPosition[0] == 500 - lowestX and sandPosition[1] == 0:
             cave[0][500 - lowestX] = "o"
@@ -144,39 +142,42 @@ def addFloor(cave: list[list[CaveType]], floorIndex: int, caveWidth: int) -> Non
     cave[floorIndex] = floor
 
 
+def countSandInCave(cave: list[list[CaveType]]) -> int:
+    return sum([1 for caveRow in cave for caveObject in caveRow if caveObject == "o"])
+
+
+def makeCave(caveWidth: int, highestY: int) -> list[list[CaveType]]:
+    cave: list[list[CaveType]] = [
+        ["." for _ in range(caveWidth)] for _ in range(highestY)
+    ]
+    return cave
+
+
 def main() -> None:
     dataPath = Path(__file__).with_name("Data.txt")
     with open(dataPath) as dataFile:
-        caveLines = dataFile.readlines()
-        cavePoints = getShapePoints(caveLines)
+        cavePoints = getShapePoints(dataFile)
         lowestX, highestX, highestY = getCaveBounds(cavePoints)
         caveWidth = highestX - lowestX
         caveShapes = pointToShapes(cavePoints)
-        cave: list[list[CaveType]] = [
-            ["." for _ in range(caveWidth)] for _ in range(highestY)
-        ]
-        addRocks(cave, caveShapes, lowestX)
-        addSandSource(cave, lowestX)
-        simulateFallingSand(lowestX, caveWidth, cave)
+        bottomlessCave = makeCave(caveWidth, highestY)
+        addRocks(bottomlessCave, caveShapes, lowestX)
+        simulateFallingSand(lowestX, caveWidth, bottomlessCave)
 
-        numberOfSandBlocks = 0
-        for caveRow in cave:
-            numberOfSandBlocks += caveRow.count("o")
-        print(f"There are {numberOfSandBlocks} blocks of sand in this cave")
+        print(
+            f"There are {countSandInCave(bottomlessCave)} blocks of sand in this bottomless cave"
+        )
 
         highestX = highestX * 2
         lowestX = lowestX // 2
         caveWidth = highestX - lowestX
-        caveWithFloor: list[list[CaveType]] = [
-            ["." for _ in range(caveWidth)] for _ in range(highestY + 2)
-        ]
+        caveWithFloor = makeCave(caveWidth, highestY + 2)
         addRocks(caveWithFloor, caveShapes, lowestX)
         addFloor(caveWithFloor, highestY + 1, caveWidth)
         simulateFallingSand(lowestX, caveWidth, caveWithFloor)
-        numberOfSandBlocks = 0
-        for caveRow in caveWithFloor:
-            numberOfSandBlocks += caveRow.count("o")
-        print(f"There are {numberOfSandBlocks} blocks of sand in this cave")
+        print(
+            f"There are {countSandInCave(caveWithFloor)} blocks of sand in the cave with a floor"
+        )
 
 
 main()
