@@ -76,12 +76,6 @@ def fillBetweenPoints(
     yield pointLine[-1]
 
 
-def getCaveShapes(
-    cavePoints: list[list[Tuple[int, int]]]
-) -> list[list[Tuple[int, int]]]:
-    return cavePoints
-
-
 def removeOldSandBlock(
     cave: list[list[CaveType]], sandPosition: Tuple[int, int]
 ) -> None:
@@ -100,17 +94,7 @@ def simulateFallingSand(
             down = sandPosition[1] + 1
             right = sandPosition[0] + 1
             left = sandPosition[0] - 1
-            if down > caveHeight - 1:
-                sandHasNotFallenOff = False
-                sandCanMove = False
-                removeOldSandBlock(cave, sandPosition)
-                break
-            elif left < 0:
-                sandHasNotFallenOff = False
-                sandCanMove = False
-                removeOldSandBlock(cave, sandPosition)
-                break
-            elif right > caveWidth - 1:
+            if down > caveHeight - 1 or left < 0 or right > caveWidth - 1:
                 sandHasNotFallenOff = False
                 sandCanMove = False
                 removeOldSandBlock(cave, sandPosition)
@@ -146,10 +130,14 @@ def countSandInCave(cave: list[list[CaveType]]) -> int:
     return sum([1 for caveRow in cave for caveObject in caveRow if caveObject == "o"])
 
 
-def makeCave(caveWidth: int, highestY: int) -> list[list[CaveType]]:
+def makeCave(
+    caveWidth: int, highestY: int, cavePoints: list[list[Tuple[int, int]]], lowestX: int
+) -> list[list[CaveType]]:
     cave: list[list[CaveType]] = [
         ["." for _ in range(caveWidth)] for _ in range(highestY)
     ]
+    caveShapes = pointToShapes(cavePoints)
+    addRocks(cave, caveShapes, lowestX)
     return cave
 
 
@@ -159,25 +147,20 @@ def main() -> None:
         cavePoints = getShapePoints(dataFile)
         lowestX, highestX, highestY = getCaveBounds(cavePoints)
         caveWidth = highestX - lowestX
-        caveShapes = pointToShapes(cavePoints)
-        bottomlessCave = makeCave(caveWidth, highestY)
-        addRocks(bottomlessCave, caveShapes, lowestX)
+        bottomlessCave = makeCave(caveWidth, highestY, cavePoints, lowestX)
         simulateFallingSand(lowestX, caveWidth, bottomlessCave)
 
-        print(
-            f"There are {countSandInCave(bottomlessCave)} blocks of sand in this bottomless cave"
-        )
+        bottomlessSand = countSandInCave(bottomlessCave)
+        print(f"There are {bottomlessSand} blocks of sand in this bottomless cave")
 
         highestX = highestX * 2
         lowestX = lowestX // 2
         caveWidth = highestX - lowestX
-        caveWithFloor = makeCave(caveWidth, highestY + 2)
-        addRocks(caveWithFloor, caveShapes, lowestX)
+        caveWithFloor = makeCave(caveWidth, highestY + 2, cavePoints, lowestX)
         addFloor(caveWithFloor, highestY + 1, caveWidth)
         simulateFallingSand(lowestX, caveWidth, caveWithFloor)
-        print(
-            f"There are {countSandInCave(caveWithFloor)} blocks of sand in the cave with a floor"
-        )
+        flooredSand = countSandInCave(caveWithFloor)
+        print(f"There are {flooredSand} blocks of sand in the cave with a floor")
 
 
 main()
