@@ -1,5 +1,9 @@
+from itertools import chain
 from pathlib import Path
 from re import findall
+from typing import TypeVar
+
+T = TypeVar("T")
 
 
 def getSensorPairs(sensorData: str) -> list[tuple[tuple[int, int], tuple[int, int]]]:
@@ -60,22 +64,64 @@ def getBoundingSensorArea(
     ]
 
 
+def getLinesBetweenCorners(
+    sensorCoords: tuple[
+        tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int], int
+    ]
+):
+    for length in range(sensorCoords[4]):
+        yield (sensorCoords[0][0] + length, sensorCoords[0][1] - length)
+        yield (sensorCoords[1][0] - length, sensorCoords[1][1] - length)
+        yield (sensorCoords[2][0] + length, sensorCoords[2][1] + length)
+        yield (sensorCoords[3][0] - length, sensorCoords[3][1] + length)
+
+
 def getSensorLines(
     boundingSensorArea: list[
         tuple[tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int], int]
     ]
-):
-    for sensorCoords in boundingSensorArea:
-        for length in range(sensorCoords[4]):
-            yield (sensorCoords[0][0] - length, sensorCoords[0][1] + length)
-            yield (sensorCoords[1][0] - length, sensorCoords[1][1] - length)
-            yield (sensorCoords[2][0] + length, sensorCoords[2][1] + length)
-            yield (sensorCoords[1][0] + length, sensorCoords[1][1] - length)
+) -> list[list[tuple[int, int]]]:
+    return [
+        list(getLinesBetweenCorners(sensorCoords))
+        for sensorCoords in boundingSensorArea
+    ]
 
 
 def getSensorLimits(sensorLines: list[tuple[int, int]]) -> tuple[int, int]:
     sortedSensorLines = sorted(sensorLines, key=lambda sensor: sensor[0])
     return sortedSensorLines[0][0], sortedSensorLines[-1][0]
+
+
+def pointsInLine(lineLength: int, minX: int, coordinate: int) -> list[tuple[int, int]]:
+    return [(line, lineLength) for line in range(minX, coordinate + 1)]
+
+
+def getNumberOfIntersects(
+    pointsInLine: list[tuple[int, int]],
+    sensorAreaLines: list[tuple[int, int]],
+) -> int:
+    intersects = [point for point in sensorAreaLines if point in pointsInLine]
+    return len(intersects)
+
+
+def isOdd(number: int) -> bool:
+    return number % 2 != 0
+
+
+def getIntersectsForAllPointsInLine(
+    minX: int, maxX: int, sensorAreaLines: list[list[tuple[int, int]]]
+):
+    for coordinate in range(minX, maxX):
+        linePoints = pointsInLine(10, minX, coordinate)
+        for sensorArea in sensorAreaLines:
+            intersects = getNumberOfIntersects(linePoints, sensorArea)
+            if isOdd(intersects):
+                yield coordinate
+                break
+
+
+def flatten(inputList: list[list[T]]) -> list[T]:
+    return list(chain.from_iterable(inputList))
 
 
 def main() -> None:
@@ -84,11 +130,14 @@ def main() -> None:
         sensorPairs = getSensorPairs(dataFile.read())
         pairsWithTaxiDistance = addTaxiDistance(sensorPairs)
         boundingSensorArea = getBoundingSensorArea(pairsWithTaxiDistance)
-        sensorAreaLines = list(getSensorLines(boundingSensorArea))
-        minX, maxX = getSensorLimits(sensorAreaLines)
-        infiniteLine = range(minX, maxX)
-        for tuple in sensorAreaLines:
-            print(tuple)
+        sensorAreaLines = getSensorLines(boundingSensorArea)
+        minX, maxX = getSensorLimits(flatten(sensorAreaLines))
+        intersects = getIntersectsForAllPointsInLine(minX, maxX, sensorAreaLines)
+        numberOfIntersects = len(list(intersects))
+        # foobar = getSensorLines([boundingSensorArea[8]])
+        # for bar in foobar:
+        #     print(bar)
+        print(numberOfIntersects)
 
 
 main()
