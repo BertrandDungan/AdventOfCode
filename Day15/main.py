@@ -1,7 +1,7 @@
 from itertools import chain
 from pathlib import Path
 from re import findall
-from typing import TypeVar
+from typing import Generator, TypeVar
 
 T = TypeVar("T")
 
@@ -68,12 +68,20 @@ def getLinesBetweenCorners(
     sensorCoords: tuple[
         tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int], int
     ]
-):
+) -> Generator[tuple[int, int], None, None]:
     for length in range(sensorCoords[4]):
         yield (sensorCoords[0][0] + length, sensorCoords[0][1] - length)
         yield (sensorCoords[1][0] - length, sensorCoords[1][1] - length)
         yield (sensorCoords[2][0] + length, sensorCoords[2][1] + length)
         yield (sensorCoords[3][0] - length, sensorCoords[3][1] + length)
+
+
+def getJustSensorArea(
+    sensorArea: tuple[
+        tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int], int
+    ]
+) -> list[tuple[int, int]]:
+    return list(sensorArea[0:4])
 
 
 def getSensorLines(
@@ -82,7 +90,7 @@ def getSensorLines(
     ]
 ) -> list[list[tuple[int, int]]]:
     return [
-        list(getLinesBetweenCorners(sensorCoords))
+        list(getLinesBetweenCorners(sensorCoords)) + getJustSensorArea(sensorCoords)
         for sensorCoords in boundingSensorArea
     ]
 
@@ -100,8 +108,12 @@ def getNumberOfIntersects(
     pointsInLine: list[tuple[int, int]],
     sensorAreaLines: list[tuple[int, int]],
 ) -> int:
-    intersects = [point for point in sensorAreaLines if point in pointsInLine]
-    return len(intersects)
+    intersects = len(
+        [point for point in sensorAreaLines if point in pointsInLine and point]
+    )
+    if intersects == 2 and pointsInLine[-1] in sensorAreaLines:
+        return 3
+    return intersects
 
 
 def isOdd(number: int) -> bool:
@@ -109,15 +121,27 @@ def isOdd(number: int) -> bool:
 
 
 def getIntersectsForAllPointsInLine(
-    minX: int, maxX: int, sensorAreaLines: list[list[tuple[int, int]]]
+    minX: int,
+    maxX: int,
+    sensorAreaLines: list[list[tuple[int, int]]],
+    beaconLocations: list[tuple[int, int]],
 ):
+    non_empty_point_groups = [
+        pointGroup
+        for pointGroup in [
+            [sensorPoint for sensorPoint in sensorAreaGroup if sensorPoint[1] == 10]
+            for sensorAreaGroup in sensorAreaLines
+        ]
+        if len(pointGroup) > 0
+    ]
     for coordinate in range(minX, maxX):
-        linePoints = pointsInLine(10, minX, coordinate)
-        for sensorArea in sensorAreaLines:
-            intersects = getNumberOfIntersects(linePoints, sensorArea)
-            if isOdd(intersects):
-                yield coordinate
-                break
+        if not (coordinate, 10) in beaconLocations:
+            linePoints = pointsInLine(10, minX, coordinate)
+            for sensorArea in non_empty_point_groups:
+                intersects = getNumberOfIntersects(linePoints, sensorArea)
+                if isOdd(intersects):
+                    yield coordinate
+                    break
 
 
 def flatten(inputList: list[list[T]]) -> list[T]:
@@ -125,18 +149,18 @@ def flatten(inputList: list[list[T]]) -> list[T]:
 
 
 def main() -> None:
-    dataPath = Path(__file__).with_name("Test.txt")
+    dataPath = Path(__file__).with_name("Data.txt")
     with open(dataPath) as dataFile:
         sensorPairs = getSensorPairs(dataFile.read())
         pairsWithTaxiDistance = addTaxiDistance(sensorPairs)
         boundingSensorArea = getBoundingSensorArea(pairsWithTaxiDistance)
         sensorAreaLines = getSensorLines(boundingSensorArea)
         minX, maxX = getSensorLimits(flatten(sensorAreaLines))
-        intersects = getIntersectsForAllPointsInLine(minX, maxX, sensorAreaLines)
+        beaconLocations = [beacon[1] for beacon in sensorPairs]
+        intersects = getIntersectsForAllPointsInLine(
+            minX, maxX, sensorAreaLines, beaconLocations
+        )
         numberOfIntersects = len(list(intersects))
-        # foobar = getSensorLines([boundingSensorArea[8]])
-        # for bar in foobar:
-        #     print(bar)
         print(numberOfIntersects)
 
 
