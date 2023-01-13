@@ -1,9 +1,10 @@
 from itertools import chain
 from pathlib import Path
 from re import findall
-from typing import Generator, TypeVar
+from typing import TypeVar
 
 T = TypeVar("T")
+ROW_POSITION = 10
 
 
 def getSensorPairs(sensorData: str) -> list[tuple[tuple[int, int], tuple[int, int]]]:
@@ -64,16 +65,57 @@ def getBoundingSensorArea(
     ]
 
 
+def getNorthWestLine(
+    sensorCoords: tuple[
+        tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int], int
+    ],
+    index: int,
+) -> tuple[int, int]:
+    return (sensorCoords[0][0] + index, sensorCoords[0][1] - index)
+
+
+def getEastNorthLine(
+    sensorCoords: tuple[
+        tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int], int
+    ],
+    index: int,
+) -> tuple[int, int]:
+    return (sensorCoords[1][0] - index, sensorCoords[1][1] - index)
+
+
+def getWestSouthLine(
+    sensorCoords: tuple[
+        tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int], int
+    ],
+    index: int,
+) -> tuple[int, int]:
+    return (sensorCoords[2][0] + index, sensorCoords[2][1] + index)
+
+
+def getSouthEastLine(
+    sensorCoords: tuple[
+        tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int], int
+    ],
+    index: int,
+) -> tuple[int, int]:
+    return (sensorCoords[3][0] - index, sensorCoords[3][1] + index)
+
+
 def getLinesBetweenCorners(
     sensorCoords: tuple[
         tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int], int
     ]
-) -> Generator[tuple[int, int], None, None]:
-    for length in range(sensorCoords[4]):
-        yield (sensorCoords[0][0] + length, sensorCoords[0][1] - length)
-        yield (sensorCoords[1][0] - length, sensorCoords[1][1] - length)
-        yield (sensorCoords[2][0] + length, sensorCoords[2][1] + length)
-        yield (sensorCoords[3][0] - length, sensorCoords[3][1] + length)
+) -> list[tuple[int, int]]:
+    return [
+        getLine(sensorCoords, x)
+        for x in range(sensorCoords[4])
+        for getLine in (
+            getNorthWestLine,
+            getEastNorthLine,
+            getWestSouthLine,
+            getSouthEastLine,
+        )
+    ]
 
 
 def getJustSensorArea(
@@ -90,7 +132,7 @@ def getSensorLines(
     ]
 ) -> list[list[tuple[int, int]]]:
     return [
-        list(getLinesBetweenCorners(sensorCoords)) + getJustSensorArea(sensorCoords)
+        getLinesBetweenCorners(sensorCoords) + getJustSensorArea(sensorCoords)
         for sensorCoords in boundingSensorArea
     ]
 
@@ -129,14 +171,18 @@ def getIntersectsForAllPointsInLine(
     non_empty_point_groups = [
         pointGroup
         for pointGroup in [
-            [sensorPoint for sensorPoint in sensorAreaGroup if sensorPoint[1] == 10]
+            [
+                sensorPoint
+                for sensorPoint in sensorAreaGroup
+                if sensorPoint[1] == ROW_POSITION
+            ]
             for sensorAreaGroup in sensorAreaLines
         ]
         if len(pointGroup) > 0
     ]
     for coordinate in range(minX, maxX):
-        if not (coordinate, 10) in beaconLocations:
-            linePoints = pointsInLine(10, minX, coordinate)
+        if not (coordinate, ROW_POSITION) in beaconLocations:
+            linePoints = pointsInLine(ROW_POSITION, minX, coordinate)
             for sensorArea in non_empty_point_groups:
                 intersects = getNumberOfIntersects(linePoints, sensorArea)
                 if isOdd(intersects):
@@ -149,7 +195,7 @@ def flatten(inputList: list[list[T]]) -> list[T]:
 
 
 def main() -> None:
-    dataPath = Path(__file__).with_name("Data.txt")
+    dataPath = Path(__file__).with_name("Test.txt")
     with open(dataPath) as dataFile:
         sensorPairs = getSensorPairs(dataFile.read())
         pairsWithTaxiDistance = addTaxiDistance(sensorPairs)
