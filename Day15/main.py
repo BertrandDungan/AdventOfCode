@@ -4,6 +4,7 @@ from re import findall
 from typing import Generator, Literal, NamedTuple, TypeVar
 
 T = TypeVar("T")
+# ROW_POSITION = 2_000_000
 ROW_POSITION = 10
 Point = NamedTuple("Point", [("x", int), ("y", int)])
 Line = NamedTuple("Line", [("start", Point), ("end", Point)])
@@ -41,13 +42,13 @@ def calcDistance(x1: int, x2: int, y1: int, y2: int) -> int:
 def addTaxiDistance(sensorPairs: list[Line]) -> list[tuple[Point, Point, int]]:
     return [
         (
-            sensorBeacon[0],
-            sensorBeacon[1],
+            sensorBeacon.start,
+            sensorBeacon.end,
             calcDistance(
-                sensorBeacon[0].x,
-                sensorBeacon[1].x,
-                sensorBeacon[0].y,
-                sensorBeacon[1].y,
+                sensorBeacon.start.x,
+                sensorBeacon.end.x,
+                sensorBeacon.start.y,
+                sensorBeacon.end.y,
             ),
         )
         for sensorBeacon in sensorPairs
@@ -90,15 +91,16 @@ def getSensorLimits(
         ]
     ]
 ) -> tuple[int, int]:
-    lowestX = sensorPoints[0][0][0].x
-    highestX = sensorPoints[0][0][0].x
+    lowestX = sensorPoints[0][0].start.x
+    highestX = sensorPoints[0][0].start.x
     for sensorArea in sensorPoints:
         for sensorPair in sensorArea:
-            sensorX = sensorPair[0].x
-            if sensorX < lowestX:
-                lowestX = sensorX
-            if sensorX > highestX:
-                highestX = sensorX
+            for sensor in sensorPair:
+                sensorX = sensor.x
+                if sensorX < lowestX:
+                    lowestX = sensorX
+                if sensorX > highestX:
+                    highestX = sensorX
     return lowestX, highestX
 
 
@@ -113,8 +115,6 @@ def getNumberOfIntersects(
     intersects = len(
         [point for point in sensorAreaLines if point in pointsInLine and point]
     )
-    # if intersects == 2 and pointsInLine[-1] in sensorAreaLines:
-    #     return 3
     return intersects
 
 
@@ -122,41 +122,13 @@ def isOdd(number: int) -> bool:
     return number % 2 != 0
 
 
-def getIntersectsForAllPointsInLine(
-    minX: int,
-    maxX: int,
-    sensorAreaLines: list[list[Point]],
-    beaconLocations: list[Point],
-):
-    non_empty_point_groups = [
-        pointGroup
-        for pointGroup in [
-            [
-                sensorPoint
-                for sensorPoint in sensorAreaGroup
-                if sensorPoint[1] == ROW_POSITION
-            ]
-            for sensorAreaGroup in sensorAreaLines
-        ]
-        if len(pointGroup) > 0
-    ]
-    for coordinate in range(minX, maxX):
-        if not (coordinate, ROW_POSITION) in beaconLocations:
-            linePoints = pointsInLine(ROW_POSITION, minX, coordinate)
-            for sensorArea in non_empty_point_groups:
-                intersects = getNumberOfIntersects(linePoints, sensorArea)
-                if isOdd(intersects):
-                    yield coordinate
-                    break
-
-
 def get_orientation(point_1: Point, point_2: Point, point_3: Point) -> Orientation:
-    crossProduct = (point_2.y - point_1.y) * (point_3.x - point_2.x) - (
-        point_3.y - point_2.y
-    ) * (point_2.x - point_1.x)
-    if crossProduct > 0:
+    anchorArea = (point_2.x - point_1.x) * (point_3.y - point_1.y) - (
+        point_3.x - point_1.x
+    ) * (point_2.y - point_1.y)
+    if anchorArea > 0:
         return Orientation.Clockwise
-    if crossProduct < 0:
+    if anchorArea < 0:
         return Orientation.Anticlockwise
     return Orientation.Collinear
 
@@ -166,52 +138,53 @@ def isPointOnLine(
     comparisonPoint: Point,
     linePoint2: Point,
 ) -> bool:
+    crossproduct = (comparisonPoint.y - linePoint1.y) * (
+        linePoint2.x - linePoint1.x
+    ) - (comparisonPoint.x - linePoint1.x) * (linePoint2.y - linePoint1.y)
+    if abs(crossproduct) != 0:
+        return False
     dotProduct = (comparisonPoint.x - linePoint1.x) * (linePoint2.x - linePoint1.x) + (
         comparisonPoint.y - linePoint1.y
     ) * (linePoint2.y - linePoint1.y)
-    squaredLength = (linePoint2.x - linePoint1.x) * (linePoint2.x - linePoint1.x) + (
+    if dotProduct < 0:
+        return False
+    squaredlengthba = (linePoint2.x - linePoint1.x) * (linePoint2.x - linePoint1.x) + (
         linePoint2.y - linePoint1.y
     ) * (linePoint2.y - linePoint1.y)
-    if dotProduct < 0 or dotProduct > squaredLength:
+    if dotProduct > squaredlengthba:
         return False
     return True
-    # return (
-    #     (comparisonPoint[0] <= max(linePoint1[0], linePoint2[0]))
-    #     and (comparisonPoint[0] >= min(linePoint1[0], linePoint2[0]))
-    #     and (comparisonPoint[1] <= max(linePoint1[1], linePoint2[1]))
-    #     and (comparisonPoint[1] >= min(linePoint1[1], linePoint2[1]))
-    # )
 
 
 def doLinesIntersect(
     line_1: Line,
     line_2: Line,
 ) -> bool:
-    orientation_1 = get_orientation(line_1[0], line_1[1], line_2[0])
-    orientation_2 = get_orientation(line_1[0], line_1[1], line_2[1])
-    orientation_3 = get_orientation(line_2[0], line_2[1], line_1[0])
-    orientation_4 = get_orientation(line_2[0], line_2[1], line_1[1])
+    orientation_1 = get_orientation(line_1.start, line_1.end, line_2.start)
+    orientation_2 = get_orientation(line_1.start, line_1.end, line_2.end)
+    orientation_3 = get_orientation(line_2.start, line_2.end, line_1.start)
+    orientation_4 = get_orientation(line_2.start, line_2.end, line_1.end)
 
     if orientation_1 != orientation_2 and orientation_3 != orientation_4:
         return True
 
     if orientation_1 == Orientation.Collinear and isPointOnLine(
-        line_1[0], line_2[0], line_1[1]
+        line_1.start, line_2.start, line_1.end
     ):
         return True
 
     if orientation_2 == Orientation.Collinear and isPointOnLine(
-        line_1[0], line_2[1], line_1[1]
+        line_1.start, line_2.end, line_1.end
     ):
         return True
 
     if orientation_3 == Orientation.Collinear and isPointOnLine(
-        line_2[0], line_1[0], line_2[1]
+        line_2.start, line_1.start, line_2.end
     ):
         return True
 
     if orientation_4 == Orientation.Collinear and isPointOnLine(
-        line_2[0], line_1[1], line_2[1]
+        line_2.start, line_1.end, line_2.end
     ):
         return True
     return False
@@ -236,11 +209,12 @@ def getIntersectsForPointsInLine(
             for sensorGroup in sensorArea:
                 for sensorPair in sensorGroup:
                     if isPointOnLine(
-                        sensorPair[0],
-                        Point(x=coordinate, y=ROW_POSITION),
-                        sensorPair[1],
+                        sensorPair.start,
+                        Point(coordinate, ROW_POSITION),
+                        sensorPair.end,
                     ):
-                        pass
+                        intersects = 1
+                        break
                     if doLinesIntersect(
                         sensorPair,
                         Line(
